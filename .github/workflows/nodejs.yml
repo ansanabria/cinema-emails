@@ -1,17 +1,33 @@
-name: Node.js CI
+name: Send email CI
 
-on: [push]
+on:
+  schedule:
+    - cron: '0 14 * * *'
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: volta-cli/action@v1
-      - run: npm ci --no-audit
-      - run: npm run lint --if-present
-      - run: npm test
-      - run: npm run build --if-present
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.12.2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile TypeScript
+        run: npm run build
+
+      - name: Run TypeScript code
+        run: node build/src/main.js
         env:
-          CI: true
+          SUPABASE_PROJECT_URL: ${{secrets.SUPABASE_PROJECT_URL}}
+          SUPABASE_SERVICE_ROLE_KEY: ${{secrets.SUPABASE_SERVICE_ROLE_KEY}}
+          APP_MAIL: ${{secrets.APP_MAIL}}
+          APP_PASS: ${{secrets.APP_PASS}}
